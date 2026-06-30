@@ -1,9 +1,0 @@
-services:
-  mqtt:
-    image: ghcr.io/scottdkey/mqtt:latest
-    container_name: mqtt
-    restart: unless-stopped
-    ports:
-      - "1883:1883"
-    volumes:
-      - /opt/mqtt/config:/config
