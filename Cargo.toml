@@ -2,6 +2,10 @@
 name = "mqtt"
 version = "0.1.0"
 edition = "2021"
+description = "Mosquitto MQTT broker — orca service-backend"
+
+[package.metadata.orca]
+category = "home"
 
 [lib]
 name = "mqtt"
