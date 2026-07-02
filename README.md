@@ -14,7 +14,7 @@ This repo is **self-contained** — the steps below run mqtt **by hand, without 
 
 ## Run it without orca
 
-### Docker / Podman
+### Docker Compose
 
 ```yaml
 # compose.yml
@@ -36,7 +36,25 @@ services:
 docker compose up -d
 ```
 
-Podman: the same file with `podman-compose up -d`.
+### Other runtimes
+
+**Podman** — the compose above works with `podman compose up -d`, or run it directly:
+
+```sh
+podman run -d --name mqtt --restart unless-stopped \
+    -p 1883:1883/tcp \
+    -p 9001:9001/tcp \
+    -v ./config:/mosquitto/config \
+    -v ./data:/mosquitto/data \
+    -v ./log:/mosquitto/log \
+    eclipse-mosquitto:2
+```
+
+**LXC** — on a container-capable LXC (e.g. a Proxmox LXC with nesting enabled) run the same image via Docker/Podman as above, or install mqtt from upstream directly on the guest: <https://mosquitto.org/>.
+
+**VM** — install mqtt from upstream (<https://mosquitto.org/>) or run the same container image inside the VM; expose port `1883`.
+
+**Unraid** — add via *Community Applications*, or *Docker → Add Container* with image `eclipse-mosquitto:2`, port `1883`, and the volume paths above.
 
 ### Ports & data
 
