@@ -1,31 +1,26 @@
 # Mosquitto MQTT Broker
 
-Message broker for smart home integrations. All Zigbee, Z-Wave, and other MQTT device messages route through here to Home Assistant.
+Operator notes for running the Eclipse Mosquitto MQTT broker deployed by this
+plugin. Mosquitto is a lightweight message broker that speaks MQTT, commonly
+used as the message bus for smart-home and IoT integrations.
 
 ---
 
-## Instance
+## Ports
 
-| Field | Value |
+| Port | Purpose |
 |---|---|
-| LXC ID | 100 |
-| Host | <host> (<ip>) |
-| IP | <ip> |
-| OS | Debian 12 |
-| CPU | 1 core |
-| RAM | 512 MB |
-| Disk | 2 GB (local-lvm) |
-| Unprivileged | yes |
-| onboot | yes |
-| Port | 1883 (MQTT), 9001 (WebSocket) |
+| 1883 | MQTT (plain) |
+| 9001 | MQTT over WebSockets (optional) |
+
+Enable and expose only the listeners you need. TLS listeners are typically
+placed on 8883.
 
 ---
 
 ## Service Management
 
 ```bash
-pct enter 100   # on <host>
-
 systemctl status mosquitto
 systemctl restart mosquitto
 journalctl -u mosquitto -f
@@ -35,17 +30,45 @@ journalctl -u mosquitto -f
 
 ## Configuration
 
-Config at `/etc/mosquitto/mosquitto.conf` inside the LXC.
+The main config lives at `/etc/mosquitto/mosquitto.conf`, with drop-in files
+under `/etc/mosquitto/conf.d/`. Define listeners, authentication, and
+persistence there.
 
-Clients that publish/subscribe:
-- Zigbee2MQTT (LXC 107) → topic prefix `zigbee2mqtt/`
-- Z-Wave JS UI (LXC 108) → topic prefix `zwave/`
-- Home Assistant (VM 105) → subscribes to all device topics
+A minimal listener with authentication looks like:
+
+```conf
+listener 1883
+allow_anonymous false
+password_file /etc/mosquitto/passwd
+persistence true
+persistence_location /var/lib/mosquitto/
+```
+
+### Authentication
+
+Anonymous access is disabled by setting `allow_anonymous false`. Create and
+manage broker users with `mosquitto_passwd`:
+
+```bash
+mosquitto_passwd -c /etc/mosquitto/passwd <username>   # create file + first user
+mosquitto_passwd    /etc/mosquitto/passwd <username>   # add/update a user
+```
+
+Reload the broker after changing credentials.
+
+### Persistence
+
+With `persistence true`, retained messages and durable subscriptions are
+written to `persistence_location` (default `/var/lib/mosquitto/`) so they
+survive a broker restart.
 
 ---
 
-## Related
+## Verifying
 
-- [home-assistant.md](home-assistant.md)
-- [zigbee2mqtt.md](zigbee2mqtt.md)
-- [zwave-js-ui.md](zwave-js-ui.md)
+Publish and subscribe from the broker host to confirm it is routing messages:
+
+```bash
+mosquitto_sub -h localhost -p 1883 -u <username> -P <password> -t 'test/#' -v
+mosquitto_pub -h localhost -p 1883 -u <username> -P <password> -t 'test/hello' -m 'ok'
+```
